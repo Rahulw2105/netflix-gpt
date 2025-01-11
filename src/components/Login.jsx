@@ -1,14 +1,22 @@
 import React, { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "./Header";
 import { validateData } from "../utils/validate";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  updateProfile,
 } from "firebase/auth";
 import { auth } from "../utils/firebase";
+import { use } from "react";
+import { useDispatch } from "react-redux";
+import { addUser } from "../utils/userSlice";
 const Login = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [isSignIn, setIsSignIn] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+  const name = useRef(null);
   const email = useRef(null);
   const password = useRef(null);
   function handleSingInForm() {
@@ -33,9 +41,22 @@ const Login = () => {
         .then((userCredential) => {
           // Signed up
           const user = userCredential.user;
-          // ...
+
           console.log(user);
+          updateProfile(user, {
+            displayName: name.current.value,
+          }).then(() => {
+            // Profile updated!
+            // ...
+            const { uid, email, displayName } = auth.currentUser;
+            dispatch(
+              addUser({ uid: uid, email: email, displayName: displayName })
+            );
+
+            navigate("/browse");
+          });
         })
+
         .catch((error) => {
           const errorCode = error.code;
           const errorMessage = error.message;
@@ -54,6 +75,7 @@ const Login = () => {
           const user = userCredential.user;
           // ...
           console.log(user);
+          navigate("/browse");
         })
         .catch((error) => {
           const errorCode = error.code;
@@ -84,6 +106,7 @@ const Login = () => {
         </h1>
         {!isSignIn && (
           <input
+            ref={name}
             className="p-3 m-2 w-full bg-slate-600"
             type="text"
             placeholder="Enter Your Name"
